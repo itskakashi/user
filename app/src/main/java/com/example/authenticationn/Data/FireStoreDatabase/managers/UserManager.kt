@@ -22,7 +22,7 @@ class UserManager {
             val result = auth.createUserWithEmailAndPassword(user.email!!, password).await()
             val userId = result.user!!.uid
             user.userId = userId
-            db.collection("Users").document(userId).set(user).await()
+            db.collection("users").document(userId).set(user).await()
             Result.success(userId)
         } catch (e: Exception) {
             Result.failure(e)
@@ -42,7 +42,7 @@ class UserManager {
     // --- Retrieving User Data ---
     suspend fun getUser(userId: String): Result<User> {
         return try {
-            val document = db.collection("Users").document(userId).get().await()
+            val document = db.collection("users").document(userId).get().await()
             if (document.exists()) {
                 val user = document.toObject(User::class.java)
                 Result.success(user!!)
@@ -57,7 +57,7 @@ class UserManager {
     // --- Updating User Profile ---
     suspend fun updateUser(user: User): Result<Unit> {
         return try {
-            db.collection("Users").document(user.userId!!).update(
+            db.collection("users").document(user.userId!!).update(
                 mapOf(
                     "name" to user.name,
                     "initial" to user.initial,
@@ -98,7 +98,7 @@ class UserManager {
             val result = auth.createUserWithEmailAndPassword(user.email!!, password).await()
             val userId = result.user!!.uid
             user.userId = userId
-            db.collection("Users").document(userId).set(user).await()
+            db.collection("users").document(userId).set(user).await()
             Result.success(userId)
         } catch (e: Exception) {
             Result.failure(e)
@@ -108,7 +108,7 @@ class UserManager {
     // --- Delete User (by the staff)---
     suspend fun deleteUser(userId: String): Result<Unit> {
         return try {
-            db.collection("Users").document(userId).delete().await()
+            db.collection("users").document(userId).delete().await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -118,7 +118,7 @@ class UserManager {
     // --- Get All User (by the staff)---
     suspend fun getAllUsers(): Result<List<User>> {
         return try {
-            val document = db.collection("Users").get().await()
+            val document = db.collection("uasers").get().await()
             val users = mutableListOf<User>()
             for (doc in document) {
                 val user = doc.toObject(User::class.java)

@@ -59,7 +59,7 @@ class FireBaseRepository(
          return OrderManager.getOrder(userId,order.orderId!!)
      }
      suspend fun updateOrderStatus(userId: String, orderId: String, newStatus: String): Result<Unit> {
-         return OrderManager.updateOrderStatus(orderId, orderId,newStatus)
+         return OrderManager.updateOrderStatus(userId, orderId,newStatus)
      }
      suspend fun updateOrder(userId: String, order: Order): Result<Unit> {
          return OrderManager.updateOrder(userId,order)

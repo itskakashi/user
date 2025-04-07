@@ -16,7 +16,7 @@ class CanesManager {
     // --- Update canes returned---
     suspend fun updateCanesReturned(userId: String, canesReturned: Int): Result<Unit> {
         return try {
-            db.collection("Users").document(userId).update(
+            db.collection("users").document(userId).update(
                 "canesReturned", canesReturned,
                 "updatedAt", FieldValue.serverTimestamp()
             ).await()
@@ -29,7 +29,7 @@ class CanesManager {
     // --- Update canes taken---
     suspend fun updateCanesTaken(userId: String, canesTaken: Int): Result<Unit> {
         return try {
-            db.collection("Users").document(userId).update(
+            db.collection("users").document(userId).update(
                 "canesTaken", canesTaken,
                 "updatedAt", FieldValue.serverTimestamp()
             ).await()

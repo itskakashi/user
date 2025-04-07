@@ -1,5 +1,6 @@
 package com.example.authenticationn.Data.FireStoreDatabase.managers
 
+import android.util.Log
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Order
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
@@ -58,13 +59,21 @@ class OrderManager {
     }
 
     // --- Updating Order Status ---
-    suspend fun updateOrderStatus(userId: String, orderId: String, newStatus: String): Result<Unit> {
+    fun updateOrderStatus(userId: String, orderId: String, newStatus: String): Result<Unit> {
+        Log.d("Userid", "second id is : $userId")
+        Log.d("orderid", "orderId is : $orderId") // Add this line
         return try {
-            val userRef = getUserDocumentReference(userId) // Get the user's reference
-            val orderCollectionRef = userRef.collection("orders") // Get the orders subcollection
-            orderCollectionRef.document(orderId).update("deliveryStatus", newStatus, "updatedAt", FieldValue.serverTimestamp()).await()
+            val orderCollectionRef = db.collection("users").document(userId).collection("orders")
+            orderCollectionRef.document(orderId).update("deliveryStatus", newStatus)
+                .addOnFailureListener {
+                    Log.d("updated", "unsuccessful: $it")
+                }
+                .addOnSuccessListener {
+                    Log.d("updated", "successful")
+                }
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.d("updated", "unsuccessful: $e")
             Result.failure(e)
         }
     }

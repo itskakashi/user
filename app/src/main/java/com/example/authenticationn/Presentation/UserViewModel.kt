@@ -170,9 +170,9 @@ class FireBaseViewModel(private val  repository:FireBaseRepository) : ViewModel(
         }
     }
 
-    fun updateOrderStatus(userId:String,orderId: String, newStatus: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
+    fun updateOrderStatus(userId:String ,orderId: String, newStatus: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
         viewModelScope.launch {
-            repository.updateOrderStatus(userId,orderId, newStatus).onSuccess {
+            repository.updateOrderStatus( userId,orderId, newStatus).onSuccess {
                 _updateOrderStatus.value = Result.success(it)
                 onSuccess()
             }.onFailure { exception ->

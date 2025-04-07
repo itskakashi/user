@@ -1,9 +1,13 @@
 package com.example.authenticationn.Presentation.Ui
 
+import BillingAndPaymentManager
+import android.R.attr.onClick
 import android.app.DatePickerDialog
 import android.os.Build
+import android.util.Log
 import android.widget.DatePicker
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.core.copy
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,17 +28,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -48,12 +53,18 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.authenticationn.R
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Order
+import com.example.authenticationn.Data.FireStoreDatabase.managers.AnalyticsManager
+import com.example.authenticationn.Data.FireStoreDatabase.managers.CanesManager
+import com.example.authenticationn.Data.FireStoreDatabase.managers.OrderManager
+import com.example.authenticationn.Data.FireStoreDatabase.managers.UserManager
+import com.example.authenticationn.Domain.FireBaseRepository
 import com.example.authenticationn.Presentation.FireBaseViewModel
+import com.example.authenticationn.R
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -65,6 +76,7 @@ import java.util.Date
 fun orderScreen(navController: NavController, viewModel: FireBaseViewModel, userId: String) {
     val pendingColor = remember { mutableStateOf(MyColor.focussedIconColor) }
     val completedColor = remember { mutableStateOf(MyColor.unfocusedIconColor) }
+
     var selectedDate = remember { mutableStateOf(getCurrentDate()) }
     val context = LocalContext.current
     //year and month of the selected date
@@ -74,16 +86,18 @@ fun orderScreen(navController: NavController, viewModel: FireBaseViewModel, user
         // Get orders by month
         viewModel.getOrdersByMonth(
             userId, selectedDate.value,
-            onSuccess ={} ,
-            onFailure ={}
+            onSuccess = {} ,
+            onFailure = {}
         )
     }
 
-    val orders by viewModel.getOrdersByMonth.observeAsState(emptyList())
+    var orders by remember { mutableStateOf<List<Order>>(emptyList())}
+    orders = viewModel.getOrdersByMonth.observeAsState(emptyList()).value
 
     var totalOrders by remember { mutableStateOf(0) }
     var pendingOrders by remember { mutableStateOf(0) }
     var completedOrders by remember { mutableStateOf(0) }
+
     LaunchedEffect(key1 = orders) {
         // Calculate counts when orders change
         totalOrders = orders.size
@@ -197,7 +211,7 @@ fun orderScreen(navController: NavController, viewModel: FireBaseViewModel, user
                                 Text(
                                     completedOrders.toString(),
                                     style = TextStyle(
-                                        color = Color(0xFF2C55E),
+                                        color = Color(0xFF22C55E),
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 24.sp
                                     )
@@ -274,19 +288,28 @@ fun orderScreen(navController: NavController, viewModel: FireBaseViewModel, user
 
                     items(orders) {
                         if (it.deliveryStatus == "Pending")
-                            pendingScreenItem(it)
+                            pendingScreenItem(it,viewModel,userId,{   viewModel.getOrdersByMonth(
+                                userId, selectedDate.value,
+                                onSuccess = {} ,
+                                onFailure = {}
+                            )})
                     }
                 }
 
 
-            } else if (completedColor.value == MyColor.focussedIconColor) {
+            } else if (completedColor.value == MyColor.focussedIconColor  ) {
 
                 LazyColumn {
 
                     items(orders) {
-                        it->
-                        if (it.deliveryStatus == "Completed")
-                            pendingScreenItem(it)
+                        if (it.deliveryStatus == "Completed"||it.deliveryStatus=="Cancelled")
+                            pendingScreenItem(it,viewModel,userId ,{  viewModel.getOrdersByMonth(
+                                userId, selectedDate.value,
+                                onSuccess = {} ,
+                                onFailure = {}
+                            )})
+
+
                     }
 
                 }
@@ -299,11 +322,21 @@ fun orderScreen(navController: NavController, viewModel: FireBaseViewModel, user
 
     }
 
+
+
 }
 
 
 @Composable
-fun pendingScreenItem(order: Order) {
+fun pendingScreenItem(order: Order,viewModel:FireBaseViewModel,userId: String ,onClick:()-> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
+    var orderDeliveryStatus by remember {
+        mutableStateOf(order.deliveryStatus)
+    }
+
+
+
+
 
     Spacer(Modifier.height(5.dp))
     Column(
@@ -331,17 +364,19 @@ fun pendingScreenItem(order: Order) {
             )
             Box(
                 Modifier
-                    .size(if (order.deliveryStatus == "Completed") 111.dp else 90.dp, 36.dp)
+                    .size(if (orderDeliveryStatus == "Completed") 111.dp else 90.dp, 36.dp)
                     .background(
                         shape = RoundedCornerShape(20.dp),
-                        color = if (order.deliveryStatus == "Completed") Color(0xFF10B981) else Color(0xFFFFEF3C7)
+                        color = if (orderDeliveryStatus == "Completed") Color(
+                            0xFF10B981
+                        ) else Color(0xFFFFEF3C7)
                     )
                 , contentAlignment = Alignment.Center
             ) {
                 Text(
-                    order.deliveryStatus ?: "",
+                    orderDeliveryStatus ?: "",
                     style = TextStyle(
-                        color = (if (order.deliveryStatus == "Completed") Color(0xFFD1FAE5) else Color(0xFFF59E0B)),
+                        color = (if (orderDeliveryStatus == "Completed") Color(0xFFD1FAE5)else Color(0xFFF59E0B) ),
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp
                     )
@@ -371,8 +406,8 @@ fun pendingScreenItem(order: Order) {
             )
 
             Text(
-                "${if (order.deliveryStatus == "Pending") "Expected" else "completed "}: " +
-                        " ${order.expectedDeliveryDate}",
+                "${if (orderDeliveryStatus == "Pending") {"Expected"} else if(orderDeliveryStatus == "Completed") "completed " else "Cancelled"}: " +
+                        " {$${if(orderDeliveryStatus=="Cancelled")order.expectedDeliveryDate else ""}}",
                 style = TextStyle(
                     color = Color(0xFF4B5563),
                     fontWeight = FontWeight.Normal,
@@ -405,19 +440,25 @@ fun pendingScreenItem(order: Order) {
                     .size(111.dp, 36.dp)
                     .background(
                         shape = RoundedCornerShape(20.dp),
-                        color = if (order.deliveryStatus == "Pending") Color(0xFFF97316) else Color.White
+                        color = if (orderDeliveryStatus == "Pending") Color(0xFFF97316) else Color.White
                     )
                     .border(
                         1.dp,
-                        color = if (order.deliveryStatus == "Completed") Color(0xFF2563EB) else Color.White,
+                        color = if (orderDeliveryStatus == "Pending") Color.White else Color(
+                            0xFF2563EB
+                        ),
                         RoundedCornerShape(20.dp)
                     )
+                    .clickable {
+                     showDialog=true;
+
+                    }
                 , contentAlignment = Alignment.Center
             ) {
                 Text(
-                    if (order.deliveryStatus == "Pending") "Cancel" else "Reorder",
+                    if (orderDeliveryStatus == "Pending") "Cancel" else "Reorder",
                     style = TextStyle(
-                        color = if (order.deliveryStatus == "Pending") Color.White else Color(0xFF2563EB),
+                        color = if (orderDeliveryStatus == "Pending") Color.White else Color(0xFF2563EB),
                         fontWeight = FontWeight.Medium,
                         fontSize = 14.sp
                     )
@@ -428,6 +469,44 @@ fun pendingScreenItem(order: Order) {
         }
         Spacer(Modifier.height(12.dp))
     }
+
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirm Cancellation") },
+            text = { Text("Are you sure you want to cancel this order?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDialog = false
+                        if (orderDeliveryStatus == "Pending") {
+                            Log.d("Userid", "first id is  : $userId")
+                            viewModel.updateOrderStatus(
+                                userId = userId,
+                                order.orderId!!,
+                                "Cancelled",
+                                {
+                                    onClick();
+                                    Log.d("updated", "successful: ")
+                                },
+                                {
+                                    Log.d("updated", "unsuccessful: ${it.message}")
+                                })
+                        }
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
 
 }
 
@@ -625,6 +704,18 @@ fun topbar(Title: String, onNavigationBackClick: () -> Unit) {
         }
     )
 
+}
+@RequiresApi(Build.VERSION_CODES.O)
+@Preview
+@Composable
+fun orderScreenPreview() {
+    val navController = NavController(LocalContext.current) // Create a mock NavController
+    val orderManager = OrderManager()
+    val analyticsManager = AnalyticsManager()
+    val billingAndPaymentManager = BillingAndPaymentManager()
+    val userManager = UserManager()
+    val canesManager = CanesManager()
+    orderScreen(navController, FireBaseViewModel(FireBaseRepository(orderManager, analyticsManager, billingAndPaymentManager, userManager, canesManager)), "userId")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
