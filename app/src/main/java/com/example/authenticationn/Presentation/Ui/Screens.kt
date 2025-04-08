@@ -18,6 +18,9 @@ sealed class route(){
     @Serializable
     data object orderScreen: route()
 
+    @Serializable
+    data object billScreen: route()
+
 
 
 

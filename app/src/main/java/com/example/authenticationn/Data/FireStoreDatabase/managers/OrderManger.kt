@@ -15,6 +15,10 @@ import java.util.Date
 import java.util.Locale
 
 class OrderManager {
+    private val fireStore = FirebaseFirestore.getInstance()
+    private val orderCollection = fireStore.collection("orders")
+    private val usersCollection = fireStore.collection("users")
+
     private val db: FirebaseFirestore = Firebase.firestore
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 
@@ -173,6 +177,20 @@ class OrderManager {
             }
             Result.success(orders)
         } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getAllOrdersForMonth(startDate: Timestamp, endDate: Timestamp): Result<List<Order>>{
+        return try {
+            val ordersSnapshot = orderCollection.whereGreaterThanOrEqualTo("date", startDate)
+                .whereLessThanOrEqualTo("date", endDate)
+                .get().await()
+            val orders = ordersSnapshot.toObjects(Order::class.java)
+            Result.success(orders)
+
+        } catch (e: Exception) {
+            Log.e("FireBaseRepository", "Error fetching orders: ${e.message}")
             Result.failure(e)
         }
     }

@@ -1,15 +1,14 @@
 package com.example.authenticationn.DI
 
-import BillingAndPaymentManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.example.authenticationn.Data.FireStoreDatabase.managers.AnalyticsManager
+import com.example.authenticationn.Data.FireStoreDatabase.managers.BillingAndPaymentManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.CanesManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.OrderManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.UserManager
 
-import com.example.authenticationn.Data.local.AppDatabase
 import com.example.authenticationn.Domain.FireBaseRepository
 import com.example.authenticationn.Presentation.FireBaseViewModel
 import org.koin.android.ext.koin.androidApplication
@@ -21,21 +20,21 @@ import kotlin.coroutines.EmptyCoroutineContext.get
 val appModule = module {
 
     // Database
-    single {
-        Room.databaseBuilder(
-            androidApplication(),
-            AppDatabase::class.java,
-            "app_database"
-        ).build()
-    }
+//    single {
+//        Room.databaseBuilder(
+//            androidApplication(),
+//            AppDatabase::class.java,
+//            "app_database"
+//        ).build()
+//    }
 
     // DAOs
-    single { get<AppDatabase>().userDao() }
-    single { get<AppDatabase>().orderDao() }
-    single { get<AppDatabase>().billDao() }
-    single { get<AppDatabase>().analyticsDao() }
-    single { get<AppDatabase>().paymentDao() }
-    single { get<AppDatabase>().pendingPaymentDao() }
+//    single { get<AppDatabase>().userDao() }
+//    single { get<AppDatabase>().orderDao() }
+//    single { get<AppDatabase>().billDao() }
+//    single { get<AppDatabase>().analyticsDao() }
+//    single { get<AppDatabase>().paymentDao() }
+//    single { get<AppDatabase>().pendingPaymentDao() }
 
     // Managers (Firestore)
     singleOf(:: UserManager)  // <--- Use the correct UserManager

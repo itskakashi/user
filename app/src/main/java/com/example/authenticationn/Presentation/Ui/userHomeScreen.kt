@@ -102,7 +102,7 @@ fun userHomeScreen(navController: NavController,viewModel: FireBaseViewModel,use
                 .padding(innerPadding)
                 .padding(16.dp)
         ) {
-            TopBar(user.value.canesTaken)
+            TopBar(user.value?.canesTaken)
             Spacer(modifier = Modifier.height(24.dp))
             MonthlyUsageChart(
                 monthlyData = listOf(
@@ -269,7 +269,10 @@ fun OrderAndBillsButtons(navController: NavController) {
                 .height(100.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MyColor.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            onClick = {
+                navController.navigate(route.billScreen)
+            }
         ) {
             Column(
                 modifier = Modifier

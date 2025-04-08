@@ -1,6 +1,5 @@
 package com.example.authenticationn.Presentation.Ui
 
-import BillingAndPaymentManager
 import android.R.attr.onClick
 import android.app.DatePickerDialog
 import android.os.Build
@@ -704,18 +703,6 @@ fun topbar(Title: String, onNavigationBackClick: () -> Unit) {
         }
     )
 
-}
-@RequiresApi(Build.VERSION_CODES.O)
-@Preview
-@Composable
-fun orderScreenPreview() {
-    val navController = NavController(LocalContext.current) // Create a mock NavController
-    val orderManager = OrderManager()
-    val analyticsManager = AnalyticsManager()
-    val billingAndPaymentManager = BillingAndPaymentManager()
-    val userManager = UserManager()
-    val canesManager = CanesManager()
-    orderScreen(navController, FireBaseViewModel(FireBaseRepository(orderManager, analyticsManager, billingAndPaymentManager, userManager, canesManager)), "userId")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

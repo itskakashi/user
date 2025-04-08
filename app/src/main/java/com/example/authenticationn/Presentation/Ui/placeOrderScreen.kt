@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Order
 import com.example.authenticationn.Data.FireStoreDatabase.managers.AnalyticsManager
+import com.example.authenticationn.Data.FireStoreDatabase.managers.BillingAndPaymentManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.CanesManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.OrderManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.UserManager
@@ -623,7 +624,7 @@ fun placeOrderScreen (navController: NavController, viewModel: FireBaseViewModel
                             canesReturning = returningCane.value,
                             orderNumber = generateOrderNumber(),
                             deliveryStatus = "Pending",
-                            deliveryAddress = viewModel.user.value.address,
+                            deliveryAddress = viewModel.user.value?.address,
                             totalAmount =totalPrice.value.toDouble(),
 
                         )
@@ -665,6 +666,7 @@ fun placeOrderScreen (navController: NavController, viewModel: FireBaseViewModel
 
 }
 fun generateOrderNumber(): String {
+
     val canesManager = CanesManager()
     val userManager = UserManager()
     val billingAndPaymentManager = BillingAndPaymentManager()
@@ -675,7 +677,8 @@ fun generateOrderNumber(): String {
         analyticsManager,
         billingAndPaymentManager,
         userManager,
-        canesManager
+        canesManager,
+
     )
     val timestamp = System.currentTimeMillis()
     return "ORDER-$timestamp"

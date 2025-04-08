@@ -1,5 +1,8 @@
 package com.example.authenticationn.Presentation
 
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -10,22 +13,58 @@ import com.example.authenticationn.Data.FireStoreDatabase.Models.Order
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Payment
 import com.example.authenticationn.Data.FireStoreDatabase.Models.User
 import com.example.authenticationn.Domain.FireBaseRepository
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.Month
+import java.time.Year
+import java.time.ZoneId
 import java.util.Date
 import java.util.Locale
 
 class FireBaseViewModel(private val  repository:FireBaseRepository) : ViewModel() {
 
+
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private val _selectedMonth = MutableStateFlow(LocalDateTime.now().month) // Default to March
+    @RequiresApi(Build.VERSION_CODES.O)
+    val selectedMonth = _selectedMonth.asStateFlow()
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private val _selectedYear = MutableStateFlow(Year.now()) // Default to 2025
+    @RequiresApi(Build.VERSION_CODES.O)
+    val selectedYear = _selectedYear.asStateFlow()
     private val _userid= MutableStateFlow("")
     val userid=_userid.asStateFlow()
 
 
-    private val _user= MutableStateFlow(User())
-    val user =_user.asStateFlow()
+    fun setUserid(userid: String) {
+        _userid.value = userid
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateSelectedMonth(month: Month) {
+        _selectedMonth.value = month
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateSelectedYear(year: Year) {
+        _selectedYear.value = year
+    }
+
+
 
     // --- LiveData for Orders ---
     private val _orders = MutableLiveData<List<Order>>()
@@ -45,6 +84,27 @@ class FireBaseViewModel(private val  repository:FireBaseRepository) : ViewModel(
 
     private val _deleteOrderStatus = MutableLiveData<Result<Unit>>()
     val deleteOrderStatus: LiveData<Result<Unit>> = _deleteOrderStatus
+
+     //bills
+    private val _bills = MutableStateFlow<List<Bill>>(emptyList())
+    val bills: StateFlow<List<Bill>> get() = _bills
+
+    private val _selectedBill = MutableStateFlow<Bill?>(null)
+    val selectedBill: StateFlow<Bill?> get() = _selectedBill
+
+    private val _allBills = MutableStateFlow<List<Bill>>(emptyList())
+    val allBills: StateFlow<List<Bill>> get() = _allBills
+    //PAYMENTS
+    private val _payments = MutableStateFlow<List<Payment>>(emptyList())
+    val payments: StateFlow<List<Payment>> get() = _payments
+
+    // USER
+    private val _user = MutableStateFlow<User?>(null)
+    val user: StateFlow<User?> get() = _user
+
+    private val _allUsers = MutableStateFlow<List<User>>(emptyList())
+    val allUsers: StateFlow<List<User>> get() = _allUsers
+
 
 //    private val _getOrdersByMonth = MutableStateFlow<List<Order>>(emptyList())
 //    val getOrdersByMonth = _getOrdersByMonth.asStateFlow()
@@ -252,75 +312,122 @@ class FireBaseViewModel(private val  repository:FireBaseRepository) : ViewModel(
 
 
     // Bill-related functions
-    fun createBill(bill: Bill, onSuccess: (String) -> Unit, onFailure: (Throwable) -> Unit) {
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getBillsForMonthAndYear(userId: String, month: Month, year: Year) {
+        _isLoading.value = true
+        _error.value = null
+
+        Log.d("ViewModel", "Fetching bills for userId: $userId, month: $month, year: $year")
+
+        val startOfMonth = LocalDateTime.of(year.value, month, 1, 0, 0, 0)
+        val endOfMonth = startOfMonth.plusMonths(1).minusNanos(1)
+
+        val startDate =
+            Timestamp(Date.from(startOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+        val endDate = Timestamp(Date.from(endOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
         viewModelScope.launch {
-            repository.createBill(bill).onSuccess { billId ->
-                onSuccess(billId)
-            }.onFailure { exception ->
-                onFailure(exception)
-            }
+            repository.getBillsForMonthAndYear(userId, startDate, endDate)
+                .onSuccess {
+                    Log.d("ViewModel", "Bills successfully fetched: $it")
+                    _bills.value=it
+                }
+                .onFailure {
+                    Log.e("ViewModel", "Error fetching bills: ${it.message}")
+                    _error.value = it.message ?: "An unknown error occurred"
+                }
+            _isLoading.value = false
         }
     }
 
-    fun markBillAsPaid(billId: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun markBillAsPaidForUser(userId: String, billId: String, onSuccess: () -> Unit, onFailure: (e: Exception) -> Unit) {
         viewModelScope.launch {
-            repository.markBillAsPaid(billId).onSuccess {
-                onSuccess()
-            }.onFailure { exception ->
-                onFailure(exception)
-            }
+            _isLoading.value = true
+            repository.markBillAsPaidForUser(userId, billId)
+                .onSuccess {
+                    onSuccess()
+                }
+                .onFailure {
+                    onFailure(it as Exception)
+                }
+            _isLoading.value = false
         }
     }
 
-    fun updateBill(bill: Bill, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun markAllBillsAsPaidForMonth(userId: String, month: Month, year: Year, onSuccess: () -> Unit, onFailure: (e: Exception) -> Unit) {
         viewModelScope.launch {
+            _isLoading.value = true
+
+            val startOfMonth = LocalDateTime.of(year.value, month, 1, 0, 0, 0)
+            val endOfMonth = startOfMonth.plusMonths(1).minusNanos(1)
+
+            val startDate = Timestamp(Date.from(startOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+            val endDate = Timestamp(Date.from(endOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+
+            repository.markAllBillsAsPaidForMonth(userId, startDate, endDate)
+                .onSuccess {
+                    onSuccess()
+                }
+                .onFailure {
+                    onFailure(it as Exception)
+                }
+            _isLoading.value = false
+        }
+    }
+    fun getAllBills() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.getAllBills()
+                .onSuccess {
+                    _allBills.value = it
+                }
+                .onFailure {
+                    _error.value = it.message ?: "An unknown error occurred"
+                }
+            _isLoading.value = false
+        }
+    }
+    fun getBill(billId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            repository.getBill(billId).onSuccess {
+                _selectedBill.value = it
+            }.onFailure {
+                _error.value = it.message
+            }
+            _isLoading.value = false
+        }
+    }
+
+    fun updateBill(bill: Bill, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
             repository.updateBill(bill).onSuccess {
                 onSuccess()
-            }.onFailure { exception ->
-                onFailure(exception)
+            }.onFailure {
+                onFailure(it as Exception)
             }
+            _isLoading.value = false
         }
     }
 
-    fun getBill(billId: String, onSuccess: (Bill) -> Unit, onFailure: (Throwable) -> Unit) {
+    fun createBill(bill: Bill, onSuccess: (billId: String) -> Unit, onFailure: (Exception) -> Unit) {
         viewModelScope.launch {
-            repository.getBill(billId).onSuccess { bill ->
-                onSuccess(bill)
-            }.onFailure { exception ->
-                onFailure(exception)
+            _isLoading.value = true
+            repository.createBill(bill).onSuccess {
+                onSuccess(it)
+            }.onFailure {
+                onFailure(it as Exception)
             }
+            _isLoading.value = false
         }
     }
 
-    fun getAllBills(onSuccess: (List<Bill>) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.getAllBills().onSuccess { bills ->
-                onSuccess(bills)
-            }.onFailure { exception ->
-                onFailure(exception)
-            }
-        }
-    }
 
-    fun recordPayment(payment: Payment, onSuccess: (String) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.recordPayment(payment).onSuccess { paymentId ->
-                onSuccess(paymentId)
-            }.onFailure { exception ->
-                onFailure(exception)
-            }
-        }
-    }
 
-    fun getAllPayments(onSuccess: (List<Payment>) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.getAllPayments().onSuccess { payments ->
-                onSuccess(payments)
-            }.onFailure { exception ->
-                onFailure(exception)
-            }
-        }
-    }
 
     // Analytics-related functions
     fun getAnalytics(analyticsId: String, onSuccess: (Analytics) -> Unit, onFailure: (Throwable) -> Unit) {
@@ -363,4 +470,7 @@ class FireBaseViewModel(private val  repository:FireBaseRepository) : ViewModel(
             }
         }
     }
+
+
+
 }

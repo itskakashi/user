@@ -1,15 +1,18 @@
 package com.example.authenticationn.Domain
 
-import BillingAndPaymentManager
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Analytics
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Bill
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Order
 import com.example.authenticationn.Data.FireStoreDatabase.Models.Payment
 import com.example.authenticationn.Data.FireStoreDatabase.Models.User
 import com.example.authenticationn.Data.FireStoreDatabase.managers.AnalyticsManager
+import com.example.authenticationn.Data.FireStoreDatabase.managers.BillingAndPaymentManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.CanesManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.OrderManager
 import com.example.authenticationn.Data.FireStoreDatabase.managers.UserManager
+import com.google.firebase.Timestamp
 import java.util.Date
 
 
@@ -81,29 +84,56 @@ class FireBaseRepository(
 
      // Bill manager
 
+      // Bill manager
+      suspend fun createBill(bill: Bill): Result<String> {
+          return BillingAndPaymentManager.createBill(bill)
+      }
 
-     suspend fun createBill(bill: Bill): Result<String> {
-         return BillingAndPaymentManager.createBill(bill)
-     }
+      suspend fun markBillAsPaid(billId: String): Result<Unit> {
+          return BillingAndPaymentManager.markBillAsPaid(billId)
+      }
 
-     suspend fun markBillAsPaid(billId: String): Result<Unit> {
-         return BillingAndPaymentManager.markBillAsPaid(billId)
-     }
-     suspend fun updateBill(bill: Bill): Result<Unit> {
-         return BillingAndPaymentManager.updateBill(bill)
-     }
-     suspend fun getBill(billId: String): Result<Bill> {
-         return BillingAndPaymentManager.getBill(billId)
-     }
-     suspend fun getAllBills(): Result<List<Bill>> {
-         return BillingAndPaymentManager.getAllBills()
-     }
-     suspend fun recordPayment(payment: Payment): Result<String> {
-         return BillingAndPaymentManager.recordPayment(payment)
-     }
-     suspend fun getAllPayments(): Result<List<Payment>> {
-         return BillingAndPaymentManager.getAllPayments()
-     }
+      suspend fun updateBill(bill: Bill): Result<Unit> {
+          return BillingAndPaymentManager.updateBill(bill)
+      }
+
+      suspend fun getBill(billId: String): Result<Bill> {
+          return BillingAndPaymentManager.getBill(billId)
+      }
+
+      suspend fun getAllBills(): Result<List<Bill>> {
+          return BillingAndPaymentManager.getAllBills()
+      }
+
+      @RequiresApi(Build.VERSION_CODES.O)
+      suspend fun getBillsForMonthAndYear(userId: String, startDate: Timestamp, endDate: Timestamp): Result<List<Bill>> {
+          return BillingAndPaymentManager.getBillsForMonthAndYear(userId, startDate, endDate)
+      }
+
+      @RequiresApi(Build.VERSION_CODES.O)
+      suspend fun generateMonthlyBills(onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+          return BillingAndPaymentManager.generateMonthlyBills(onSuccess, onFailure,OrderManager)
+      }
+      @RequiresApi(Build.VERSION_CODES.O)
+      suspend fun markAllBillsAsPaidForMonth(userId: String, startDate: Timestamp, endDate: Timestamp): Result<Unit> {
+          return BillingAndPaymentManager.markAllBillsAsPaidForMonth(userId,startDate,endDate)
+      }
+
+      suspend fun markBillAsPaidForUser(userId: String,billId: String): Result<Unit> {
+          return BillingAndPaymentManager.markBillAsPaidForUser(userId,billId)
+      }
+
+      suspend fun recordPayment(payment: Payment): Result<String> {
+          return BillingAndPaymentManager.recordPayment(payment)
+      }
+
+      suspend fun getAllPayments(): Result<List<Payment>> {
+          return BillingAndPaymentManager.getAllPayments()
+      }
+      //get current user id
+      fun getCurrentUserId(): String? {
+          return BillingAndPaymentManager.getCurrentUserId()
+      }
 
      /// Analytics manager
 

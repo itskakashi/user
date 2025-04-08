@@ -68,15 +68,16 @@ data class Bill(
     var userId: DocumentReference? = null,
     var amount: Double? = null,
     var date: Timestamp? = null,
-    var month: String? = null,
-    var year: String? = null,
+    var billDate:Timestamp?=null,
+    var month: Int? = null,
+    var year: Int? = null,
     var isPaid: Boolean? = null,
     var orderId: DocumentReference? = null,
     var overdueDate: Timestamp? = null,
     var isOverdue: Boolean? = null,
     var totalJars: Int? = null,
     var paymentStatus: String? = null,
-    var itemizedDetails: List<Map<String, Any>>? = null,
+    var itemizedDetails: List<String>? = null,
     var billId: String? = null
 )
 
