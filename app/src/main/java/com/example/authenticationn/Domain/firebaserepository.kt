@@ -50,7 +50,9 @@ class FireBaseRepository(
      suspend fun getAllUsers(): Result<List<User>> {
          return UserManager.getAllUsers()
      }
-
+    suspend fun logOut(): Result<Unit> {
+        return UserManager.logOut()
+    }
 
 
 

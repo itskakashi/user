@@ -47,6 +47,8 @@ class UserManager {
                 val user = document.toObject(User::class.java)
                 Result.success(user!!)
             } else {
+
+
                 Result.failure(Exception("User not found"))
             }
         } catch (e: Exception) {
@@ -118,13 +120,21 @@ class UserManager {
     // --- Get All User (by the staff)---
     suspend fun getAllUsers(): Result<List<User>> {
         return try {
-            val document = db.collection("uasers").get().await()
+            val document = db.collection("users").get().await()
             val users = mutableListOf<User>()
             for (doc in document) {
                 val user = doc.toObject(User::class.java)
                 users.add(user)
             }
             Result.success(users)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    suspend fun logOut(): Result<Unit> {
+        return try {
+            auth.signOut()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -21,8 +21,10 @@ sealed class route(){
     @Serializable
     data object billScreen: route()
 
-
-
+    @Serializable
+    data object userProfile: route()
+    @Serializable
+    data object analyticsScreen: route()
 
 }
 

@@ -175,19 +175,9 @@ class FireBaseViewModel(private val  repository:FireBaseRepository) : ViewModel(
         }
     }
 
-    fun addCustomer(user: User, password: String, onSuccess: (String) -> Unit, onFailure: (Throwable) -> Unit) {
+    fun logOut(onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
         viewModelScope.launch {
-            repository.addCustomer(user, password).onSuccess { userId ->
-                onSuccess(userId)
-            }.onFailure { exception ->
-                onFailure(exception)
-            }
-        }
-    }
-
-    fun deleteUser(userId: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.deleteUser(userId).onSuccess {
+            repository.logOut().onSuccess {
                 onSuccess()
             }.onFailure { exception ->
                 onFailure(exception)
@@ -195,282 +185,381 @@ class FireBaseViewModel(private val  repository:FireBaseRepository) : ViewModel(
         }
     }
 
-    fun getAllUsers(onSuccess: (List<User>) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.getAllUsers().onSuccess { users ->
-                onSuccess(users)
-            }.onFailure { exception ->
-                onFailure(exception)
-            }
-        }
-    }
-
-    // Order-related functions
-    fun createOrder(userId:String,order: Order, onSuccess: (String) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.createOrder(userId,order).onSuccess {orderId ->
-                _createOrderStatus.value = Result.success(orderId)
-                onSuccess(orderId)
-            }.onFailure { exception ->
-                _createOrderStatus.value = Result.failure(exception)
-                onFailure(exception)
-            }
-        }
-    }
-
-    fun getOrder(userId:String,order: Order, onSuccess: (Order) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.getOrder(userId,order).onSuccess { order ->
-                _getOrderStatus.value = Result.success(order)
-                onSuccess(order)
-            }.onFailure { exception ->
-                _getOrderStatus.value = Result.failure(exception)
-                onFailure(exception)
-            }
-        }
-    }
-
-    fun updateOrderStatus(userId:String ,orderId: String, newStatus: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.updateOrderStatus( userId,orderId, newStatus).onSuccess {
-                _updateOrderStatus.value = Result.success(it)
-                onSuccess()
-            }.onFailure { exception ->
-                _updateOrderStatus.value = Result.failure(exception)
-                onFailure(exception)
-            }
-        }
-    }
-
-    fun updateOrder(userId: String,order: Order, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.updateOrder(userId,order).onSuccess {
-                _updateOrderStatus.value = Result.success(it)
-                onSuccess()
-            }.onFailure { exception ->
-                _updateOrderStatus.value = Result.failure(exception)
-                onFailure(exception)
-            }
-        }
-    }
-
-    fun deleteOrder(userId: String,orderId: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.deleteOrder(userId,orderId).onSuccess {
-                _deleteOrderStatus.value = Result.success(it)
-                onSuccess()
-            }.onFailure { exception ->
-                _deleteOrderStatus.value = Result.failure(exception)
-                onFailure(exception)
-            }
-        }
-    }
-
-    fun getAllOrders(userId:String,onSuccess: (List<Order>) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.getAllOrders(userId).onSuccess { orders ->
-                _orders.value=orders
-                onSuccess(orders)
-            }.onFailure { exception ->
-                // Handle error
-                onFailure(exception)
-            }
-        }
-    }
-
-    fun getAllTodayOrders(userId: String,onSuccess: (List<Order>) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.getAllTodayOrders(userId).onSuccess { todayOrders ->
-                _todayOrders.value=todayOrders
-                onSuccess(todayOrders)
-            }.onFailure { exception ->
-                // Handle error
-                onFailure(exception)
-            }
-        }
-    }
-    fun getOrdersByMonth(userId: String, yearMonth: String, onSuccess: (List<Order>) -> Unit, onFailure: (Throwable) -> Unit){
-        viewModelScope.launch {
-            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val firstDayOfMonth =  dateFormat.parse("$yearMonth-01")
-            val calendar = java.util.Calendar.getInstance()
-            calendar.time = firstDayOfMonth
-            calendar.add(java.util.Calendar.MONTH, 1)
-            calendar.add(java.util.Calendar.DAY_OF_MONTH,-1)
-            val lastDayOfMonth = calendar.time
-            repository.getOrdersByMonth(userId,firstDayOfMonth,lastDayOfMonth).onSuccess { orders ->
-                _getOrdersByMonth.value=orders
-                onSuccess(orders)
-            }.onFailure { exception ->
-                // Handle error
-                onFailure(exception)
-            }
-        }
-    }
-
-
-
-
-    // Bill-related functions
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun getBillsForMonthAndYear(userId: String, month: Month, year: Year) {
-        _isLoading.value = true
-        _error.value = null
-
-        Log.d("ViewModel", "Fetching bills for userId: $userId, month: $month, year: $year")
-
-        val startOfMonth = LocalDateTime.of(year.value, month, 1, 0, 0, 0)
-        val endOfMonth = startOfMonth.plusMonths(1).minusNanos(1)
-
-        val startDate =
-            Timestamp(Date.from(startOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
-        val endDate = Timestamp(Date.from(endOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
-        viewModelScope.launch {
-            repository.getBillsForMonthAndYear(userId, startDate, endDate)
-                .onSuccess {
-                    Log.d("ViewModel", "Bills successfully fetched: $it")
-                    _bills.value=it
+        fun addCustomer(
+            user: User,
+            password: String,
+            onSuccess: (String) -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.addCustomer(user, password).onSuccess { userId ->
+                    onSuccess(userId)
+                }.onFailure { exception ->
+                    onFailure(exception)
                 }
-                .onFailure {
-                    Log.e("ViewModel", "Error fetching bills: ${it.message}")
-                    _error.value = it.message ?: "An unknown error occurred"
-                }
-            _isLoading.value = false
+            }
         }
-    }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun markBillAsPaidForUser(userId: String, billId: String, onSuccess: () -> Unit, onFailure: (e: Exception) -> Unit) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.markBillAsPaidForUser(userId, billId)
-                .onSuccess {
+        fun deleteUser(userId: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
+            viewModelScope.launch {
+                repository.deleteUser(userId).onSuccess {
                     onSuccess()
+                }.onFailure { exception ->
+                    onFailure(exception)
                 }
-                .onFailure {
-                    onFailure(it as Exception)
-                }
-            _isLoading.value = false
+            }
         }
-    }
+
+        fun getAllUsers(onSuccess: (List<User>) -> Unit, onFailure: (Throwable) -> Unit) {
+            viewModelScope.launch {
+                repository.getAllUsers().onSuccess { users ->
+                    onSuccess(users)
+                }.onFailure { exception ->
+                    onFailure(exception)
+                }
+            }
+        }
+
+        // Order-related functions
+        fun createOrder(
+            userId: String,
+            order: Order,
+            onSuccess: (String) -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.createOrder(userId, order).onSuccess { orderId ->
+                    _createOrderStatus.value = Result.success(orderId)
+                    onSuccess(orderId)
+                }.onFailure { exception ->
+                    _createOrderStatus.value = Result.failure(exception)
+                    onFailure(exception)
+                }
+            }
+        }
+
+        fun getOrder(
+            userId: String,
+            order: Order,
+            onSuccess: (Order) -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.getOrder(userId, order).onSuccess { order ->
+                    _getOrderStatus.value = Result.success(order)
+                    onSuccess(order)
+                }.onFailure { exception ->
+                    _getOrderStatus.value = Result.failure(exception)
+                    onFailure(exception)
+                }
+            }
+        }
+
+        fun updateOrderStatus(
+            userId: String,
+            orderId: String,
+            newStatus: String,
+            onSuccess: () -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.updateOrderStatus(userId, orderId, newStatus).onSuccess {
+                    _updateOrderStatus.value = Result.success(it)
+                    onSuccess()
+                }.onFailure { exception ->
+                    _updateOrderStatus.value = Result.failure(exception)
+                    onFailure(exception)
+                }
+            }
+        }
+
+        fun updateOrder(
+            userId: String,
+            order: Order,
+            onSuccess: () -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.updateOrder(userId, order).onSuccess {
+                    _updateOrderStatus.value = Result.success(it)
+                    onSuccess()
+                }.onFailure { exception ->
+                    _updateOrderStatus.value = Result.failure(exception)
+                    onFailure(exception)
+                }
+            }
+        }
+
+        fun deleteOrder(
+            userId: String,
+            orderId: String,
+            onSuccess: () -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.deleteOrder(userId, orderId).onSuccess {
+                    _deleteOrderStatus.value = Result.success(it)
+                    onSuccess()
+                }.onFailure { exception ->
+                    _deleteOrderStatus.value = Result.failure(exception)
+                    onFailure(exception)
+                }
+            }
+        }
+
+        fun getAllOrders(
+            userId: String,
+            onSuccess: (List<Order>) -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.getAllOrders(userId).onSuccess { orders ->
+                    _orders.value = orders
+                    onSuccess(orders)
+                }.onFailure { exception ->
+                    // Handle error
+                    onFailure(exception)
+                }
+            }
+        }
+
+        fun getAllTodayOrders(
+            userId: String,
+            onSuccess: (List<Order>) -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.getAllTodayOrders(userId).onSuccess { todayOrders ->
+                    _todayOrders.value = todayOrders
+                    onSuccess(todayOrders)
+                }.onFailure { exception ->
+                    // Handle error
+                    onFailure(exception)
+                }
+            }
+        }
+
+        fun getOrdersByMonth(
+            userId: String,
+            yearMonth: String,
+            onSuccess: (List<Order>) -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                val firstDayOfMonth = dateFormat.parse("$yearMonth-01")
+                val calendar = java.util.Calendar.getInstance()
+                calendar.time = firstDayOfMonth
+                calendar.add(java.util.Calendar.MONTH, 1)
+                calendar.add(java.util.Calendar.DAY_OF_MONTH, -1)
+                val lastDayOfMonth = calendar.time
+                repository.getOrdersByMonth(userId, firstDayOfMonth, lastDayOfMonth)
+                    .onSuccess { orders ->
+                        _getOrdersByMonth.value = orders
+                        onSuccess(orders)
+                    }.onFailure { exception ->
+                    // Handle error
+                    onFailure(exception)
+                }
+            }
+        }
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun markAllBillsAsPaidForMonth(userId: String, month: Month, year: Year, onSuccess: () -> Unit, onFailure: (e: Exception) -> Unit) {
-        viewModelScope.launch {
+        // Bill-related functions
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        fun getBillsForMonthAndYear(userId: String, month: Month, year: Year) {
             _isLoading.value = true
+            _error.value = null
+
+            Log.d("ViewModel", "Fetching bills for userId: $userId, month: $month, year: $year")
 
             val startOfMonth = LocalDateTime.of(year.value, month, 1, 0, 0, 0)
             val endOfMonth = startOfMonth.plusMonths(1).minusNanos(1)
 
-            val startDate = Timestamp(Date.from(startOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
-            val endDate = Timestamp(Date.from(endOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+            val startDate =
+                Timestamp(Date.from(startOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+            val endDate =
+                Timestamp(Date.from(endOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+            viewModelScope.launch {
+                repository.getBillsForMonthAndYear(userId, startDate, endDate)
+                    .onSuccess {
+                        Log.d("ViewModel", "Bills successfully fetched: $it")
+                        _bills.value = it
+                    }
+                    .onFailure {
+                        Log.e("ViewModel", "Error fetching bills: ${it.message}")
+                        _error.value = it.message ?: "An unknown error occurred"
+                    }
+                _isLoading.value = false
+            }
+        }
 
-            repository.markAllBillsAsPaidForMonth(userId, startDate, endDate)
-                .onSuccess {
-                    onSuccess()
+        @RequiresApi(Build.VERSION_CODES.O)
+        fun markBillAsPaidForUser(
+            userId: String,
+            billId: String,
+            onSuccess: () -> Unit,
+            onFailure: (e: Exception) -> Unit
+        ) {
+            viewModelScope.launch {
+                _isLoading.value = true
+                repository.markBillAsPaidForUser(userId, billId)
+                    .onSuccess {
+                        onSuccess()
+                    }
+                    .onFailure {
+                        onFailure(it as Exception)
+                    }
+                _isLoading.value = false
+            }
+        }
+
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        fun markAllBillsAsPaidForMonth(
+            userId: String,
+            month: Month,
+            year: Year,
+            onSuccess: () -> Unit,
+            onFailure: (e: Exception) -> Unit
+        ) {
+            viewModelScope.launch {
+                _isLoading.value = true
+
+                val startOfMonth = LocalDateTime.of(year.value, month, 1, 0, 0, 0)
+                val endOfMonth = startOfMonth.plusMonths(1).minusNanos(1)
+
+                val startDate =
+                    Timestamp(Date.from(startOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+                val endDate =
+                    Timestamp(Date.from(endOfMonth.atZone(ZoneId.systemDefault()).toInstant()))
+
+                repository.markAllBillsAsPaidForMonth(userId, startDate, endDate)
+                    .onSuccess {
+                        onSuccess()
+                    }
+                    .onFailure {
+                        onFailure(it as Exception)
+                    }
+                _isLoading.value = false
+            }
+        }
+
+        fun getAllBills() {
+            viewModelScope.launch {
+                _isLoading.value = true
+                repository.getAllBills()
+                    .onSuccess {
+                        _allBills.value = it
+                    }
+                    .onFailure {
+                        _error.value = it.message ?: "An unknown error occurred"
+                    }
+                _isLoading.value = false
+            }
+        }
+
+        fun getBill(billId: String) {
+            viewModelScope.launch {
+                _isLoading.value = true
+                repository.getBill(billId).onSuccess {
+                    _selectedBill.value = it
+                }.onFailure {
+                    _error.value = it.message
                 }
-                .onFailure {
+                _isLoading.value = false
+            }
+        }
+
+        fun updateBill(bill: Bill, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+            viewModelScope.launch {
+                _isLoading.value = true
+                repository.updateBill(bill).onSuccess {
+                    onSuccess()
+                }.onFailure {
                     onFailure(it as Exception)
                 }
-            _isLoading.value = false
+                _isLoading.value = false
+            }
         }
-    }
-    fun getAllBills() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.getAllBills()
-                .onSuccess {
-                    _allBills.value = it
+
+        fun createBill(
+            bill: Bill,
+            onSuccess: (billId: String) -> Unit,
+            onFailure: (Exception) -> Unit
+        ) {
+            viewModelScope.launch {
+                _isLoading.value = true
+                repository.createBill(bill).onSuccess {
+                    onSuccess(it)
+                }.onFailure {
+                    onFailure(it as Exception)
                 }
-                .onFailure {
-                    _error.value = it.message ?: "An unknown error occurred"
+                _isLoading.value = false
+            }
+        }
+
+
+        // Analytics-related functions
+        fun getAnalytics(
+            analyticsId: String,
+            onSuccess: (Analytics) -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.getAnalytics(analyticsId).onSuccess { analytics ->
+                    onSuccess(analytics)
+                }.onFailure { exception ->
+                    onFailure(exception)
                 }
-            _isLoading.value = false
-        }
-    }
-    fun getBill(billId: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.getBill(billId).onSuccess {
-                _selectedBill.value = it
-            }.onFailure {
-                _error.value = it.message
-            }
-            _isLoading.value = false
-        }
-    }
-
-    fun updateBill(bill: Bill, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.updateBill(bill).onSuccess {
-                onSuccess()
-            }.onFailure {
-                onFailure(it as Exception)
-            }
-            _isLoading.value = false
-        }
-    }
-
-    fun createBill(bill: Bill, onSuccess: (billId: String) -> Unit, onFailure: (Exception) -> Unit) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            repository.createBill(bill).onSuccess {
-                onSuccess(it)
-            }.onFailure {
-                onFailure(it as Exception)
-            }
-            _isLoading.value = false
-        }
-    }
-
-
-
-
-    // Analytics-related functions
-    fun getAnalytics(analyticsId: String, onSuccess: (Analytics) -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.getAnalytics(analyticsId).onSuccess { analytics ->
-                onSuccess(analytics)
-            }.onFailure { exception ->
-                onFailure(exception)
             }
         }
-    }
 
-    fun updateAnalytics(analytics: Analytics, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.updateAnalytics(analytics).onSuccess {
-                onSuccess()
-            }.onFailure { exception ->
-                onFailure(exception)
+        fun updateAnalytics(
+            analytics: Analytics,
+            onSuccess: () -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.updateAnalytics(analytics).onSuccess {
+                    onSuccess()
+                }.onFailure { exception ->
+                    onFailure(exception)
+                }
             }
         }
-    }
 
-    // Canes-related functions
-    fun updateCanesReturned(userId: String, canesReturned: Int, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.updateCanesReturned(userId, canesReturned).onSuccess {
-                onSuccess()
-            }.onFailure { exception ->
-                onFailure(exception)
+        // Canes-related functions
+        fun updateCanesReturned(
+            userId: String,
+            canesReturned: Int,
+            onSuccess: () -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.updateCanesReturned(userId, canesReturned).onSuccess {
+                    onSuccess()
+                }.onFailure { exception ->
+                    onFailure(exception)
+                }
             }
         }
-    }
 
-    fun updateCanesTaken(userId: String, canesTaken: Int, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit) {
-        viewModelScope.launch {
-            repository.updateCanesTaken(userId, canesTaken).onSuccess {
-                onSuccess()
-            }.onFailure { exception ->
-                onFailure(exception)
+        fun updateCanesTaken(
+            userId: String,
+            canesTaken: Int,
+            onSuccess: () -> Unit,
+            onFailure: (Throwable) -> Unit
+        ) {
+            viewModelScope.launch {
+                repository.updateCanesTaken(userId, canesTaken).onSuccess {
+                    onSuccess()
+                }.onFailure { exception ->
+                    onFailure(exception)
+                }
             }
         }
+
     }
 
-
-
-}

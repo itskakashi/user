@@ -598,6 +598,7 @@ fun bottomBar(navController: NavController) {
                 orderIconColor.value = MyColor.unfocusedIconColor
                 analyiticIconColor.value = MyColor.focussedIconColor
                 profileIconColor.value = MyColor.unfocusedIconColor
+                navController.navigate(route.analyticsScreen)
             },
         ) {
             Column(
@@ -631,6 +632,7 @@ fun bottomBar(navController: NavController) {
                 orderIconColor.value = MyColor.unfocusedIconColor
                 analyiticIconColor.value = MyColor.unfocusedIconColor
                 profileIconColor.value = MyColor.focussedIconColor
+                navController.navigate(route.userProfile)
             },
         ) {
             Column(

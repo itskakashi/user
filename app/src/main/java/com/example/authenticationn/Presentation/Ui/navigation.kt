@@ -44,6 +44,12 @@ fun navigation(){
         composable<route.billScreen> {
             BillScreen(navHostController, viewModel, viewModel.userid.value)
         }
+        composable<route.userProfile> {
+            UserProfileScreen(navHostController, viewModel, viewModel.userid.value)
+        }
+        composable<route.analyticsScreen> {
+            AnalyticsScreen(navHostController)
+        }
 
 
     }
