@@ -1,7 +1,9 @@
 
 
 
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -57,9 +59,16 @@ import com.example.authenticationn.Presentation.Ui.MyColor
 import com.example.authenticationn.Presentation.Ui.bottomBar
 import com.example.authenticationn.Presentation.Ui.route
 import com.example.authenticationn.R
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.util.Date
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun placeOrderScreen (navController: NavController, viewModel: FireBaseViewModel, userId:String){
     val  quantity= remember { mutableStateOf(0) }
@@ -70,6 +79,7 @@ fun placeOrderScreen (navController: NavController, viewModel: FireBaseViewModel
     val coldWaterColor= remember { mutableStateOf(MyColor.unfocusedWaterColor) }
     var selectedItem by remember { mutableStateOf(0) }
     val totalPrice= remember { mutableStateOf(0) }
+
 
     Scaffold(
 
@@ -614,9 +624,15 @@ fun placeOrderScreen (navController: NavController, viewModel: FireBaseViewModel
                 }
 
                 Spacer(modifier = Modifier.height(25.dp))
+                val currentDate = LocalDate.now()
+                val currentMillis = currentDate.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                val initialDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(currentMillis), ZoneOffset.UTC)
+                val initialDate = Date.from(initialDateTime.toInstant(ZoneOffset.UTC))
                 Button(
                     onClick = {
+
                         val newOrder = Order(
+                             userName = viewModel.user.value?.name?:"no name",
                             userID = FirebaseFirestore.getInstance().collection("Users")
                                 .document(userId),
                             waterType = if (isNormalWaterSelected.value) "Normal" else "Cold",
@@ -626,6 +642,8 @@ fun placeOrderScreen (navController: NavController, viewModel: FireBaseViewModel
                             deliveryStatus = "Pending",
                             deliveryAddress = viewModel.user.value?.address,
                             totalAmount =totalPrice.value.toDouble(),
+                            isDelivered = false,
+                            expectedDeliveryDate = Timestamp(initialDate),
 
                         )
                          if(quantity.value>0){
@@ -686,6 +704,7 @@ fun generateOrderNumber(): String {
 
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun placeOrderScreenPreview() {

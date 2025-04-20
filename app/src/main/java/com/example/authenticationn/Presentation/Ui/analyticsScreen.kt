@@ -100,7 +100,8 @@ fun AnalyticsScreen(navController: NavController) {
                     }
                 }
             )
-        }
+        },
+        bottomBar = {bottomBar(navController)}
     ) { innerPadding ->
         LazyColumn(
             modifier = Modifier

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Authenticationn" parent="android:Theme.Material.Light.NoActionBar" />
-    
-    <style name="Theme.App.Splashscreen" parent="Theme.App.Splashscreen">
+    <style name="Theme.App.Splashscreen" parent="Theme.SplashScreen">
         <item name="android:windowSplashScreenBackground">@color/white</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/logo</item>
         <item name="postSplashScreenTheme">@style/Theme.Authenticationn</item>
 
+
     </style>
-    
+
+
 </resources>

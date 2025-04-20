@@ -85,4 +85,6 @@ dependencies {
 
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+
+    implementation(libs.androidx.core.splashscreen.v100alpha02)
 }

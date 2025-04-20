@@ -155,7 +155,7 @@ fun loginScreen(navController: NavController,viewModel: FireBaseViewModel){
                          viewModel.updateUserId(it)
                     },
                     onFailure = { exception ->
-                        Toast.makeText(context,"Incorrect Login/Password ",Toast.LENGTH_LONG).show()
+                        Toast.makeText(context,"${exception.message}",Toast.LENGTH_LONG).show()
                     }
                 )
             },
@@ -229,7 +229,7 @@ fun loginScreen(navController: NavController,viewModel: FireBaseViewModel){
 
             Button(
                 onClick = {
-
+                    navController.navigate(route.singUpScreen)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MyColor.darkBlue, // Enabled background

@@ -19,9 +19,12 @@ fun navigation(){
     val firebaseAuth = FirebaseAuth.getInstance()
 
     NavHost(navController = navHostController,startDestination =  if (firebaseAuth.currentUser != null) {
+
         val currentUser = firebaseAuth.currentUser!!.uid
         viewModel.updateUserId(currentUser)
         route.homeScreen // User is already logged in
+
+
     } else {
         route.signInScreen // User needs to log in
     }){

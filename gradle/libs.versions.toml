@@ -1,5 +1,7 @@
 [versions]
-agp = "8.11.0-alpha04"
+agp = "8.11.0-alpha07"
+
+coreSplashscreenVersion = "1.0.1"
 koinAndroid = "4.0.4"
 koinAndroidxCompose = "4.0.4"
 kotlin = "2.0.21"
@@ -25,6 +27,8 @@ runtimeLivedata = "1.7.8"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 
+
+androidx-core-splashscreen-v100alpha02 = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreenVersion" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomKtx" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }

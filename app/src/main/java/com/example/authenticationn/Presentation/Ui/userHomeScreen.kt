@@ -22,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,7 +48,9 @@ import com.example.authenticationn.R
 fun userHomeScreen(navController: NavController,viewModel: FireBaseViewModel,userId: String) {
     val user=mutableStateOf(viewModel.user.value)
     var selectedItem by remember { mutableStateOf(0) }
-
+    LaunchedEffect (Unit){
+        viewModel.updateCurrentUser(userId)
+    }
     Scaffold(
         bottomBar = {
             bottomBar(navController)

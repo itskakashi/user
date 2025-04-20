@@ -22,6 +22,9 @@ class UserManager {
             val result = auth.createUserWithEmailAndPassword(user.email!!, password).await()
             val userId = result.user!!.uid
             user.userId = userId
+            //Send verification email
+            val userFirebase = auth.currentUser
+            userFirebase?.sendEmailVerification()?.await()
             db.collection("users").document(userId).set(user).await()
             Result.success(userId)
         } catch (e: Exception) {

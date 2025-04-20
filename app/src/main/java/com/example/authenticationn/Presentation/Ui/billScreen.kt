@@ -85,28 +85,8 @@ fun BillScreen(
         if (userId.isNotEmpty()) {
             viewModel.setUserid(userId)
             viewModel.getBillsForMonthAndYear(userId, selectedMonth, selectedYear)
-            val db: FirebaseFirestore = Firebase.firestore
+
             // Check if there are no bills for the user, then create a test bill
-            if (bills.isEmpty()) {
-                val testBill = Bill(
-                    billId = "testBill_${userId}_${System.currentTimeMillis()}",
-                    userId = db.collection("users").document(userId),
-                    amount = 150.0,
-                    totalJars = 10,
-                    billDate = Timestamp(java.util.Date()),
-                    paymentStatus = "Unpaid",
-                    isPaid = false
-                )
-
-                viewModel.createBill(testBill,
-                    onSuccess = {
-                        println("test bill is added")
-                    },
-                    onFailure = { e ->
-                        println("test bill is failure ${e.message}")
-
-                    })
-            }
         }
     }
 
@@ -315,9 +295,22 @@ fun BillSummarySection(
     onFailure: (e: Exception) -> Unit
 ) {
     // Calculate total jars and total amount from the bills
-    val totalJars = bills.sumOf { it.totalJars ?: 0 }
-    val totalAmount = bills.sumOf { it.amount ?: 0.0 }
-    val paymentStatus = if (bills.isNotEmpty()) bills.first().paymentStatus else "unpaid"
+    var totalJars = 0
+    var totalAmount = 0.0
+    var pendingAmount = 0.0
+    var paidAmount = 0.0
+
+    for (bill in bills) {
+        totalJars += bill.totalJars ?: 0
+        totalAmount += bill.amount ?: 0.0
+        if (!bill.isPaid!!) {
+            pendingAmount += bill.amount ?: 0.0
+        } else {
+            paidAmount += bill.amount ?: 0.0
+        }
+    }
+
+    val paymentStatus = if (bills.isNotEmpty()) bills.first().paymentStatus else "Unpaid"
     val colorStatus = if (paymentStatus == "Unpaid") Color.Red else Color.Green
     Column(
         modifier = Modifier
@@ -326,37 +319,107 @@ fun BillSummarySection(
             .background(Color.White, shape = RoundedCornerShape(8.dp))
             .padding(16.dp)
     ) {
-        Text(
-            text = "Total Jars Delivered",
-            style = TextStyle(
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
-        )
-        Text(
-            text = "$totalJars",
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = Color.Black
-            )
-        )
+        Row (modifier=Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+            ){
+            Column {
+                Text(
+                    text = "Total Jars Delivered",
+                    style = TextStyle(
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                )
+                Text(
+                    text = "$totalJars",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = Color.Black
+                    )
+                )
+
+
+
+            }
+
+         Column {
+             Text(
+                 text = "Pending Amount",
+                 style = TextStyle(
+                     color = Color.Gray,
+                     fontSize = 14.sp
+                 )
+             )
+             Text(
+                 text = "₹${pendingAmount}",
+                 style = TextStyle(
+                     fontWeight = FontWeight.Bold,
+                     fontSize = 24.sp,
+                     color = Color.Black
+                 )
+             )
+         }
+
+
+
+          }
+
+
+
         Spacer(modifier = Modifier.height(20.dp))
-        Text(
-            text = "Total Amount",
-            style = TextStyle(
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
-        )
-        Text(
-            text = "₹${totalAmount}",
-            style = TextStyle(
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                color = Color.Black
-            )
-        )
+
+
+
+        Row (modifier=Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ){
+            Column {
+                Text(
+                    text = "Total Amount      ",
+                    style = TextStyle(
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                )
+                Text(
+                    text = "₹${totalAmount}",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = Color.Black
+                    )
+                )
+
+
+
+            }
+
+            Column {
+                Text(
+                    text = "Paid Amount        ",
+                    style = TextStyle(
+                        color = Color.Gray,
+                        fontSize = 14.sp
+                    )
+                )
+                Text(
+                    text = "₹${paidAmount}",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        color = Color.Black
+                    )
+                )
+            }
+
+
+
+
+        }
+
+
+
         Spacer(modifier = Modifier.height(20.dp))
         Text(
             text = "Payment Status",
